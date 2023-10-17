@@ -13,52 +13,27 @@ public class Server {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             while (true) try {
-                out.write("Введите два числа и операцию из списка доступных (+, -, *, /) через пробел [для выхода введите \"quit\"]\n");
-                out.flush();
+                writeFromServer(out, "Введите два числа и операцию из списка доступных (+, -, *, /) через пробел [для выхода введите \"quit\"]\n");
                 String userMessage = in.readLine();
                 if (userMessage == null || userMessage.trim().isEmpty()) {
-                    out.write("Введена пустая строка\n");
-                    out.flush();
+                    writeFromServer(out, "Введена пустая строка\n");
                     continue;
                 }
                 if (userMessage.equalsIgnoreCase("quit")) {
-                    socket.close();
-                    in.close();
-                    out.close();
-                    server.close();
+                    closeAll(socket, server, out, in);
                     System.out.println("Сервер закрыт");
                     break;
                 }
                 String[] splitUserMessage = userMessage.replaceAll("\\s+", " ").split(" ");
                 if (splitUserMessage.length != 3) {
-                    out.write("Некорректное число аргументов\n");
-                    out.flush();
+                    writeFromServer(out, "Некорректное число аргументов\n");
                     continue;
                 }
                 int firstOperand = Integer.parseInt(splitUserMessage[0]);
                 int secondOperand = Integer.parseInt(splitUserMessage[1]);
                 String operation = splitUserMessage[2];
-                switch(operation){
-                    case "+":
-                        out.write(sum(firstOperand, secondOperand) + "\n");
-                        out.flush();
-                        break;
-                    case "-":
-                        out.write(dec(firstOperand, secondOperand) + "\n");
-                        out.flush();
-                        break;
-                    case "*":
-                        out.write(mul(firstOperand, secondOperand) + "\n");
-                        out.flush();
-                        break;
-                    case "/":
-                        out.write(div(firstOperand, secondOperand) + "\n");
-                        out.flush();
-                        break;
-                    default:
-                        out.write("Некорректная операция\n");
-                        out.flush();
-                }
+                operationHandle(out, operation, firstOperand, secondOperand);
+
             } catch (Exception e) {
                 System.out.println("Error: " + e);
                 break;
@@ -80,5 +55,36 @@ public class Server {
 
     public static int mul(int a, int b) {
         return a * b;
+    }
+
+    public static void writeFromServer(BufferedWriter out, String message) throws IOException {
+        out.write(message);
+        out.flush();
+    }
+
+    public static void operationHandle(BufferedWriter out, String operation, int firstOperand, int secondOperand) throws IOException {
+        switch(operation){
+            case "+":
+                writeFromServer(out, sum(firstOperand, secondOperand) + "\n");
+                break;
+            case "-":
+                writeFromServer(out, dec(firstOperand, secondOperand) + "\n");
+                break;
+            case "*":
+                writeFromServer(out, mul(firstOperand, secondOperand) + "\n");
+                break;
+            case "/":
+                writeFromServer(out, div(firstOperand, secondOperand) + "\n");
+                break;
+            default:
+                writeFromServer(out, "Некорректная операция\n");
+        }
+    }
+
+    public static void closeAll(Socket socket, ServerSocket server, BufferedWriter out, BufferedReader in) throws IOException {
+        socket.close();
+        in.close();
+        out.close();
+        server.close();
     }
 }
